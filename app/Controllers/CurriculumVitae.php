@@ -20,18 +20,20 @@ class CurriculumVitae extends BaseController
         $this->kemampuan = new \App\Models\Kemampuan();
         $this->pengalaman = new \App\Models\Pengalaman();
         $this->pendidikan = new \App\Models\Pendidikan();
-        $this->db = db_connect();
-
+        $this->db = \Config\Database::connect();
     }
 
     public function index()
     {
         $all_mahasiswa = $this->db->query("SELECT mahasiswa.id_mahasiswa, nama, tempat_lahir, tanggal_lahir, agama, jenis_kelamin, alamat, no_hp, status, email, phase_1.id_pendidikan, phase_1.tipe_pendidikan, phase_1.tempat_pendidikan, phase_1.waktu_pendidikan, phase_1.nama_pendidikan, GROUP_CONCAT(phase_1.id_pengalaman SEPARATOR '[,]') as id_pengalaman, GROUP_CONCAT(phase_1.pengalaman SEPARATOR '[,]') as pengalaman, phase_1.id_kemampuan, phase_1.kategori_kemampuan, phase_1.sub_kategori_kemampuan from mahasiswa left join ( select id_pengalaman, pengalaman.pengalaman, pengalaman.id_mahasiswa, phase_2.kategori_kemampuan, phase_2.sub_kategori_kemampuan, phase_2.id_kemampuan, GROUP_CONCAT(phase_2.tipe_pendidikan SEPARATOR '[,]') as tipe_pendidikan, GROUP_CONCAT(phase_2.id_pendidikan SEPARATOR '[,]') as id_pendidikan, GROUP_CONCAT(phase_2.waktu_pendidikan SEPARATOR '[,]') as waktu_pendidikan, GROUP_CONCAT(phase_2.tempat_pendidikan SEPARATOR '[,]') as tempat_pendidikan, GROUP_CONCAT(phase_2.nama_pendidikan SEPARATOR '[,]') as nama_pendidikan from pengalaman LEFT join ( select id_pendidikan, pendidikan.id_mahasiswa as id_mahasiswa, pendidikan.tipe_pendidikan, pendidikan.nama_pendidikan, pendidikan.waktu_pendidikan, pendidikan.tempat_pendidikan, GROUP_CONCAT(kemampuan.kategori_kemampuan SEPARATOR '[,]' ) as kategori_kemampuan, GROUP_CONCAT( kemampuan.sub_kategori_kemampuan SEPARATOR '[,]' ) as sub_kategori_kemampuan, GROUP_CONCAT(kemampuan.id_kemampuan SEPARATOR '[,]') as id_kemampuan from pendidikan left JOIN kemampuan on pendidikan.id_mahasiswa = kemampuan.id_mahasiswa GROUP BY id_pendidikan ) as phase_2 on pengalaman.id_mahasiswa = phase_2.id_mahasiswa GROUP BY id_pengalaman ) as phase_1 on mahasiswa.id_mahasiswa = phase_1.id_mahasiswa GROUP BY id_mahasiswa")->getResult();
+
         $data = [
             'all_mahasiswa' => $all_mahasiswa,
         ];
+
         return view('CurriculumVitaeView', $data);
     }
+
     public function saveCV(){
         $data = $this->request->getVar();
         $data_diri = [
@@ -45,6 +47,7 @@ class CurriculumVitae extends BaseController
             'status' => $data['status'],
             'alamat' => $data['alamat'],
         ];
+
         if($data['type_form'] == 'insert') {
             $insert = $this->data_diri_model->insert($data);
             if($insert) {
@@ -53,7 +56,7 @@ class CurriculumVitae extends BaseController
                 $kemampuan = [];
                 $pengalaman = [];
                 $max_index = max( count($data['nama_pendidikan']),  count($data['pengalaman']), count($data['kategori_kemampuan']));
-                for($i = 0; $i < $max_index; $i++){
+                for($i = 0; $i < count($data['nama_pendidikan']); $i++){
                     if($data['nama_pendidikan'][$i]) {
                         $pendidikan[] = array(
                             'id_mahasiswa' => $id_mahasiswa,
@@ -63,6 +66,8 @@ class CurriculumVitae extends BaseController
                             'waktu_pendidikan' => $data['waktu_pendidikan'][$i],
                         );
                     }
+                }
+                for($i = 0; $i < count($data['pengalaman']); $i++){
                     if($data['pengalaman'][$i]){
 
                         $pengalaman[] = array(
@@ -70,6 +75,8 @@ class CurriculumVitae extends BaseController
                             'pengalaman' => $data['pengalaman'][$i],
                         );
                     }
+                }
+                for($i = 0; $i < count($data['kategori_kemampuan']); $i++){
                     if($data['kategori_kemampuan'][$i]){
 
                         $kemampuan[] = array(
@@ -84,6 +91,7 @@ class CurriculumVitae extends BaseController
                 $insert_pendidikan = $this->pendidikan->insertBatch($pendidikan);
             }
         }
+
         if($data['type_form'] == 'edit') {
             $id_mahasiswa = $data['id_mahasiswa'];
             $update = $this->data_diri_model->update($id_mahasiswa,$data);
@@ -98,15 +106,15 @@ class CurriculumVitae extends BaseController
                 
                 $max_index = max( count($data['nama_pendidikan']),  count($data['pengalaman']), count($data['kategori_kemampuan']));
 
-                for($i = 0; $i < $max_index; $i++){
+                for($i = 0; $i < count($data['nama_pendidikan']); $i++){
                     if($data['nama_pendidikan'][$i]) {
-                        if($id_pendidikan[$i]) { 
+                        if(isset($id_pendidikan[$i])) { 
                             $this->pendidikan->update($id_pendidikan[$i], array(
                                 'id_mahasiswa' => $id_mahasiswa,
                                 'tipe_pendidikan' => $data['tipe_pendidikan'][$i],
                                 'nama_pendidikan' => $data['nama_pendidikan'][$i],
                                 'tempat_pendidikan' => $data['tempat_pendidikan'][$i],
-                                'waktu_pendidikan' => $data['waktu_pendidikan'][$i],
+                                'waktu_pendidikan' => $data['waktu-pendidikan'][$i],
                             ));
                         } else {
                             $pendidikan[] = array(
@@ -114,12 +122,14 @@ class CurriculumVitae extends BaseController
                                 'tipe_pendidikan' => $data['tipe_pendidikan'][$i],
                                 'nama_pendidikan' => $data['nama_pendidikan'][$i],
                                 'tempat_pendidikan' => $data['tempat_pendidikan'][$i],
-                                'waktu_pendidikan' => $data['waktu_pendidikan'][$i],
+                                'waktu_pendidikan' => $data['waktu-pendidikan'][$i],
                             );
                         }
                     }
+                }
+                for($i = 0; $i < count($data['pengalaman']); $i++){
                     if($data['pengalaman'][$i]){
-                        if($id_pengalaman[$i]) { 
+                        if(isset($id_pengalaman[$i])) { 
                             $this->pengalaman->update($id_pengalaman[$i], array(
                                 'id_mahasiswa' => $id_mahasiswa,
                                 'pengalaman' => $data['pengalaman'][$i],
@@ -131,9 +141,11 @@ class CurriculumVitae extends BaseController
                             );
                         }
                     }
+                }
+                for($i = 0; $i < count($data['kategori_kemampuan']); $i++){
                     if($data['kategori_kemampuan'][$i]){
 
-                        if($id_kemampuan[$i]) { 
+                        if(isset($id_kemampuan[$i])) { 
                             $this->kemampuan->update($id_kemampuan[$i], array(
                                 'id_mahasiswa' => $id_mahasiswa,
                                 'kategori_kemampuan' => $data['kategori_kemampuan'][$i],
@@ -155,10 +167,9 @@ class CurriculumVitae extends BaseController
             }
             // return 'edit';
         }
-
-
         return redirect()->back();
     }
+
     public function delete($id){
         $delete = $this->data_diri_model->delete(['id_mahasiswa' => $id]);
         $delete_kemampuan = $this->kemampuan->delete(['id_mahasiswa' => $id]);
@@ -166,6 +177,7 @@ class CurriculumVitae extends BaseController
         $delete_pendidikan = $this->pendidikan->delete(['id_mahasiswa' => $id]);
         return redirect()->back();
     }
+
     public function exportExcel(){
         $all_mahasiswa = $this->db->query("SELECT mahasiswa.id_mahasiswa, nama, tempat_lahir, tanggal_lahir, agama, jenis_kelamin, alamat, no_hp, status, email, phase_1.id_pendidikan, phase_1.tipe_pendidikan, phase_1.tempat_pendidikan, phase_1.waktu_pendidikan, phase_1.nama_pendidikan, GROUP_CONCAT(phase_1.id_pengalaman SEPARATOR '[,]') as id_pengalaman, GROUP_CONCAT(phase_1.pengalaman SEPARATOR '[,]') as pengalaman, phase_1.id_kemampuan, phase_1.kategori_kemampuan, phase_1.sub_kategori_kemampuan from mahasiswa left join ( select id_pengalaman, pengalaman.pengalaman, pengalaman.id_mahasiswa, phase_2.kategori_kemampuan, phase_2.sub_kategori_kemampuan, phase_2.id_kemampuan, GROUP_CONCAT(phase_2.tipe_pendidikan SEPARATOR '[,]') as tipe_pendidikan, GROUP_CONCAT(phase_2.id_pendidikan SEPARATOR '[,]') as id_pendidikan, GROUP_CONCAT(phase_2.waktu_pendidikan SEPARATOR '[,]') as waktu_pendidikan, GROUP_CONCAT(phase_2.tempat_pendidikan SEPARATOR '[,]') as tempat_pendidikan, GROUP_CONCAT(phase_2.nama_pendidikan SEPARATOR '[,]') as nama_pendidikan from pengalaman LEFT join ( select id_pendidikan, pendidikan.id_mahasiswa as id_mahasiswa, pendidikan.tipe_pendidikan, pendidikan.nama_pendidikan, pendidikan.waktu_pendidikan, pendidikan.tempat_pendidikan, GROUP_CONCAT(kemampuan.kategori_kemampuan SEPARATOR '[,]' ) as kategori_kemampuan, GROUP_CONCAT( kemampuan.sub_kategori_kemampuan SEPARATOR '[,]' ) as sub_kategori_kemampuan, GROUP_CONCAT(kemampuan.id_kemampuan SEPARATOR '[,]') as id_kemampuan from pendidikan left JOIN kemampuan on pendidikan.id_mahasiswa = kemampuan.id_mahasiswa GROUP BY id_pendidikan ) as phase_2 on pengalaman.id_mahasiswa = phase_2.id_mahasiswa GROUP BY id_pengalaman ) as phase_1 on mahasiswa.id_mahasiswa = phase_1.id_mahasiswa GROUP BY id_mahasiswa")->getResult();
         $spreadsheet = new Spreadsheet();
@@ -198,15 +210,19 @@ class CurriculumVitae extends BaseController
             $kategori_kemampuan_array = explode("[,]", $mahasiswa->kategori_kemampuan);
             $sub_kategori_kemampuan_array = explode("[,]", $mahasiswa->sub_kategori_kemampuan);
 
-            $max_index = max( count($tipe_pendidikan_array ),  count($pengalaman_array), count($kategori_kemampuan_array));
+            $max_index = max( count($tipe_pendidikan_array),  count($pengalaman_array), count($kategori_kemampuan_array));
 
-            for($i = 0; $i < $max_index; $i++) {
+            for($i = 0; $i < count($tipe_pendidikan_array); $i++) {
                 if($tipe_pendidikan_array[$i]) {
                     $pendidikanHTML .= "-> ".$tipe_pendidikan_array[$i]."-".$nama_pendidikan_array[$i]."-".$tempat_pendidikan_array[$i]."-".$waktu_pendidikan_array[$i]."\n";
                 }
+            }
+            for($i = 0; $i < count($pengalaman_array); $i++) {
                 if($pengalaman_array[$i]){
                     $pengalamanHTML .= "-> ".$pengalaman_array[$i]."\n";
                 }
+            }
+            for($i = 0; $i < count($kategori_kemampuan_array); $i++) {
                 if($kategori_kemampuan_array[$i]){
                     $kemampuanHTML .= "-> ".$kategori_kemampuan_array[$i]."-".$sub_kategori_kemampuan_array[$i]."\n";
                 }
@@ -249,7 +265,8 @@ class CurriculumVitae extends BaseController
 
         return $writer->save('php://output');
     }
-    function exportPDF($id) {
+
+    function exportPDF() {
         $all_mahasiswa = $this->db->query("SELECT mahasiswa.id_mahasiswa, nama, tempat_lahir, tanggal_lahir, agama, jenis_kelamin, alamat, no_hp, status, email, phase_1.id_pendidikan, phase_1.tipe_pendidikan, phase_1.tempat_pendidikan, phase_1.waktu_pendidikan, phase_1.nama_pendidikan, GROUP_CONCAT(phase_1.id_pengalaman SEPARATOR '[,]') as id_pengalaman, GROUP_CONCAT(phase_1.pengalaman SEPARATOR '[,]') as pengalaman, phase_1.id_kemampuan, phase_1.kategori_kemampuan, phase_1.sub_kategori_kemampuan from mahasiswa left join ( select id_pengalaman, pengalaman.pengalaman, pengalaman.id_mahasiswa, phase_2.kategori_kemampuan, phase_2.sub_kategori_kemampuan, phase_2.id_kemampuan, GROUP_CONCAT(phase_2.tipe_pendidikan SEPARATOR '[,]') as tipe_pendidikan, GROUP_CONCAT(phase_2.id_pendidikan SEPARATOR '[,]') as id_pendidikan, GROUP_CONCAT(phase_2.waktu_pendidikan SEPARATOR '[,]') as waktu_pendidikan, GROUP_CONCAT(phase_2.tempat_pendidikan SEPARATOR '[,]') as tempat_pendidikan, GROUP_CONCAT(phase_2.nama_pendidikan SEPARATOR '[,]') as nama_pendidikan from pengalaman LEFT join ( select id_pendidikan, pendidikan.id_mahasiswa as id_mahasiswa, pendidikan.tipe_pendidikan, pendidikan.nama_pendidikan, pendidikan.waktu_pendidikan, pendidikan.tempat_pendidikan, GROUP_CONCAT(kemampuan.kategori_kemampuan SEPARATOR '[,]' ) as kategori_kemampuan, GROUP_CONCAT( kemampuan.sub_kategori_kemampuan SEPARATOR '[,]' ) as sub_kategori_kemampuan, GROUP_CONCAT(kemampuan.id_kemampuan SEPARATOR '[,]') as id_kemampuan from pendidikan left JOIN kemampuan on pendidikan.id_mahasiswa = kemampuan.id_mahasiswa GROUP BY id_pendidikan ) as phase_2 on pengalaman.id_mahasiswa = phase_2.id_mahasiswa GROUP BY id_pengalaman ) as phase_1 on mahasiswa.id_mahasiswa = phase_1.id_mahasiswa GROUP BY id_mahasiswa")->getResult();
         $data = [
             'all_mahasiswa' => $all_mahasiswa,
@@ -271,14 +288,41 @@ class CurriculumVitae extends BaseController
         // output the generated pdf
         return $dompdf->stream($filename);
     }
+
     function exportPDFCV($id) {
-        $mahasiswa = $this->db->query("SELECT mahasiswa.id_mahasiswa, nama, tempat_lahir, tanggal_lahir, agama, jenis_kelamin, alamat, no_hp, status, email, phase_1.id_pendidikan, phase_1.tipe_pendidikan, phase_1.tempat_pendidikan, phase_1.waktu_pendidikan, phase_1.nama_pendidikan, GROUP_CONCAT(phase_1.id_pengalaman SEPARATOR '[,]') as id_pengalaman, GROUP_CONCAT(phase_1.pengalaman SEPARATOR '[,]') as pengalaman, phase_1.id_kemampuan, phase_1.kategori_kemampuan, phase_1.sub_kategori_kemampuan from mahasiswa left join ( select id_pengalaman, pengalaman.pengalaman, pengalaman.id_mahasiswa, phase_2.kategori_kemampuan, phase_2.sub_kategori_kemampuan, phase_2.id_kemampuan, GROUP_CONCAT(phase_2.tipe_pendidikan SEPARATOR '[,]') as tipe_pendidikan, GROUP_CONCAT(phase_2.id_pendidikan SEPARATOR '[,]') as id_pendidikan, GROUP_CONCAT(phase_2.waktu_pendidikan SEPARATOR '[,]') as waktu_pendidikan, GROUP_CONCAT(phase_2.tempat_pendidikan SEPARATOR '[,]') as tempat_pendidikan, GROUP_CONCAT(phase_2.nama_pendidikan SEPARATOR '[,]') as nama_pendidikan from pengalaman LEFT join ( select id_pendidikan, pendidikan.id_mahasiswa as id_mahasiswa, pendidikan.tipe_pendidikan, pendidikan.nama_pendidikan, pendidikan.waktu_pendidikan, pendidikan.tempat_pendidikan, GROUP_CONCAT(kemampuan.kategori_kemampuan SEPARATOR '[,]' ) as kategori_kemampuan, GROUP_CONCAT( kemampuan.sub_kategori_kemampuan SEPARATOR '[,]' ) as sub_kategori_kemampuan, GROUP_CONCAT(kemampuan.id_kemampuan SEPARATOR '[,]') as id_kemampuan from pendidikan left JOIN kemampuan on pendidikan.id_mahasiswa = kemampuan.id_mahasiswa GROUP BY id_pendidikan ) as phase_2 on pengalaman.id_mahasiswa = phase_2.id_mahasiswa GROUP BY id_pengalaman ) as phase_1 on mahasiswa.id_mahasiswa = phase_1.id_mahasiswa where mahasiswa.id_mahasiswa=$id GROUP BY id_mahasiswa")->getFirstRow();
+        //$mahasiswa = $this->db->query("SELECT mahasiswa.id_mahasiswa, nama, tempat_lahir, tanggal_lahir, agama, jenis_kelamin, alamat, no_hp, status, email, phase_1.id_pendidikan, phase_1.tipe_pendidikan, phase_1.tempat_pendidikan, phase_1.waktu_pendidikan, phase_1.nama_pendidikan, GROUP_CONCAT(phase_1.id_pengalaman SEPARATOR '[,]') as id_pengalaman, GROUP_CONCAT(phase_1.pengalaman SEPARATOR '[,]') as pengalaman, phase_1.id_kemampuan, phase_1.kategori_kemampuan, phase_1.sub_kategori_kemampuan from mahasiswa left join ( select id_pengalaman, pengalaman.pengalaman, pengalaman.id_mahasiswa, phase_2.kategori_kemampuan, phase_2.sub_kategori_kemampuan, phase_2.id_kemampuan, GROUP_CONCAT(phase_2.tipe_pendidikan SEPARATOR '[,]') as tipe_pendidikan, GROUP_CONCAT(phase_2.id_pendidikan SEPARATOR '[,]') as id_pendidikan, GROUP_CONCAT(phase_2.waktu_pendidikan SEPARATOR '[,]') as waktu_pendidikan, GROUP_CONCAT(phase_2.tempat_pendidikan SEPARATOR '[,]') as tempat_pendidikan, GROUP_CONCAT(phase_2.nama_pendidikan SEPARATOR '[,]') as nama_pendidikan from pengalaman LEFT join ( select id_pendidikan, pendidikan.id_mahasiswa as id_mahasiswa, pendidikan.tipe_pendidikan, pendidikan.nama_pendidikan, pendidikan.waktu_pendidikan, pendidikan.tempat_pendidikan, GROUP_CONCAT(kemampuan.kategori_kemampuan SEPARATOR '[,]' ) as kategori_kemampuan, GROUP_CONCAT( kemampuan.sub_kategori_kemampuan SEPARATOR '[,]' ) as sub_kategori_kemampuan, GROUP_CONCAT(kemampuan.id_kemampuan SEPARATOR '[,]') as id_kemampuan from pendidikan left JOIN kemampuan on pendidikan.id_mahasiswa = kemampuan.id_mahasiswa GROUP BY id_pendidikan ) as phase_2 on pengalaman.id_mahasiswa = phase_2.id_mahasiswa GROUP BY id_pengalaman ) as phase_1 on mahasiswa.id_mahasiswa = phase_1.id_mahasiswa where mahasiswa.id_mahasiswa=$id GROUP BY id_mahasiswa")->getFirstRow();
+
+        // $builder = $this->db->table('mahasiswa as mhs');
+        // $builder->select("
+        //     mhs.id_mahasiswa, mhs.nama, mhs.tempat_lahir, mhs.tanggal_lahir, mhs.agama, mhs.jenis_kelamin, mhs.alamat, mhs.no_hp, mhs.status, mhs.email, 
+        //     phase1.id_pengalaman, phase1.pengalaman,
+        //     phase2.id_pendidikan, phase2.tipe_pendidikan, phase2.tempat_pendidikan, phase2.waktu_pendidikan, phase2.nama_pendidikan,
+        //     phase3.id_kemampuan, phase3.kategori_kemampuan, phase3.sub_kategori_kemampuan,
+        // ");
+        // $builder->join('pengalaman as phase1', 'phase1.id_mahasiswa = mhs.id_mahasiswa', 'left')
+        //         ->join('pendidikan as phase2', 'phase2.id_mahasiswa = mhs.id_mahasiswa', 'left')
+        //         ->join('kemampuan as phase3', 'phase3.id_mahasiswa = mhs.id_mahasiswa', 'left')
+        //         ->where('mhs.id_mahasiswa', $id)
+        //         ->groupBy('mhs.id_mahasiswa');
+        // $mahasiswa = $builder->get()->getFirstRow();
+
+        $mahasiswa = $this->db->table('mahasiswa')->select('*')->where('id_mahasiswa', $id)->get()->getFirstRow();
+        $pengalaman = $this->db->table('pengalaman')->select('*')->where('id_mahasiswa', $id)->get()->getResult();
+        $pendidikan_formal = $this->db->table('pendidikan')->select('*')->where('id_mahasiswa', $id)->where('tipe_pendidikan', 'formal')->get()->getResult();
+        $pendidikan_non_formal = $this->db->table('pendidikan')->select('*')->where('id_mahasiswa', $id)->where('tipe_pendidikan', 'non-formal')->get()->getResult();
+        $kemampuan = $this->db->table('kemampuan')->select('*')->where('id_mahasiswa', $id)->get()->getResult();
         
         $filename = "CV " . $mahasiswa->nama;
 
         $data = [
             'mahasiswa' => $mahasiswa,
+            'tentang_saya' => "Lorem ipsum dolor sit amet consectetur, adipisicing elit. In harum natus animi error. Voluptatem aperiam accusantium eveniet, quibusdam vel tempora placeat sit omnis saepe sapiente ab? Voluptate nobis inventore adipisci!",
+            'pengalaman' => (count($pengalaman)>0) ? array_chunk($pengalaman, ceil(count($pengalaman)/2)): null,
+            'pendidikan_formal' => $pendidikan_formal,
+            'pendidikan_non_formal' => $pendidikan_non_formal,
+            'kemampuan' => $kemampuan,
         ];
+
         // instantiate and use the dompdf class
         $dompdf = new Dompdf();
 

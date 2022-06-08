@@ -16,7 +16,7 @@
                 <div class="container-fluid">
                     <!-- Button view -->
                     <div class="pb-4 d-flex" style="gap:10px;">
-                        <button type="button" class="btn btn-success" data-toggle="modal" data-target="#modal-form">Tambah CV</button>
+                        <button type="button" class="btn btn-success" data-toggle="modal" data-target="#modal-form" id="btnTambah">Tambah CV</button>
                         <button type="button" class="btn btn-outline-success">Import List CV</button>
                         <div class="dropdown">
                             <button class="btn btn-warning dropdown-toggle" type="button" id="dropdownMenuButton" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
@@ -66,7 +66,7 @@
                                                 </button>
                                                 <a href="curriculum-vitae/delete/<?= $mahasiswa->id_mahasiswa ?>"  class="btn btn-danger btn-sm" >
                                                     <i class="fas fa-trash"></i>
-                                                </button>
+                                                </a>
                                             </td>
                                         </tr>
                                         <?php $no++; ?>
@@ -99,7 +99,6 @@
     <!-- End of Page Wrapper -->
 
     <!-- Modal -->
-    
     <div class="modal fade" id="modal-form" tabindex="-1" role="dialog" aria-labelledby="modal-form" aria-hidden="true">
         <form method="POST" action="<?= base_url('curriculum-vitae/add-cv') ?>" id="form">
             <input type="hidden" value="insert" name="type_form"/>
@@ -240,30 +239,104 @@
             </div>
         </form>
     </div>
-    <script >
+    
+    <script>
+        
         function pengalamanView(value) {
             return `<div class='form-group'><input type='hidden' name='id_pengalaman[]' value='${value.id_pengalaman}'/><input type='text' class='form-control' name='pengalaman[]' value='${value.pengalaman}' id='pengalaman' placeholder='Enter here'></div>`
         }
+
         function kemampuanView(value) {
             return `<div class='d-flex' style='gap:5px;'><input type='hidden' name='id_kemampuan[]' value='${value.id_kemampuan}'/><div class='form-group w-100'><label for='kategori-kemampuan'>Kategori Kemampuan</label><input type='text' class='form-control' value='${value.kategori_kemampuan}' name='kategori_kemampuan[]' id='kategori-kemampuan' placeholder='Enter here'></div><div class='form-group w-100'><label for='sub-kategori-kemampuan'>Sub-Kategori Kemampuan</label><input type='text' class='form-control' value='${value.sub_kategori_kemampuan}'  name='sub_kategori_kemampuan[]' id='sub-kategori-kemampuan' placeholder='Enter here'></div></div>`
         }
+
         function pendidikanView(value) {
-            return `<div class='d-flex' style='gap:5px;'><input type='hidden' name='id_pendidikan[]' value='${value.id_pendidikan}'/><div class='form-group'><label for='nama-pendidikan'>Jenis Pendidikan</label><input type='text' class='form-control' value='${value.nama_pendidikan}' name='nama_pendidikan[]' id='nama-pendidikan' placeholder='Enter here'></div><div class='form-group'><label for='tipe-pendidikan'>Tipe</label><select class='form-control' id='tipe-pendidikan' value='${value.tipe_pendidikan}' name='tipe_pendidikan[]'>    <option value='formal' selected>Laki-laki</option>    <option value='non-formal'>Perempuan</option></select></div><div class='form-group'><label for='tempat-pendidikan'>Sekolah</label><input type='text' class='form-control'  value='${value.tempat_pendidikan}' name='tempat_pendidikan[]' id='tempat-pendidikan' placeholder='Enter here'></div><div class='form-group'><label for='waktu-pendidikan'>Waktu Pendidikan</label><input type='text' class='form-control' id='waktu-pendidikan' value='${value.waktu_pendidikan}' name='waktu-pendidikan[]' placeholder='Enter here'></div></div>`
+            return `<div class='d-flex' style='gap:5px;'><input type='hidden' name='id_pendidikan[]' value='${value.id_pendidikan}'/><div class='form-group'><label for='nama-pendidikan'>Jenis Pendidikan</label><input type='text' class='form-control' value='${value.nama_pendidikan}' name='nama_pendidikan[]' id='nama-pendidikan' placeholder='Enter here'></div><div class='form-group'><label for='tipe-pendidikan'>Tipe</label><select class='form-control' id='tipe-pendidikan' value='${value.tipe_pendidikan}' name='tipe_pendidikan[]'>    <option value='formal' selected>Formal</option>    <option value='non-formal'>Non Formal</option></select></div><div class='form-group'><label for='tempat-pendidikan'>Sekolah</label><input type='text' class='form-control'  value='${value.tempat_pendidikan}' name='tempat_pendidikan[]' id='tempat-pendidikan' placeholder='Enter here'></div><div class='form-group'><label for='waktu-pendidikan'>Waktu Pendidikan</label><input type='text' class='form-control' id='waktu-pendidikan' value='${value.waktu_pendidikan}' name='waktu-pendidikan[]' placeholder='Enter here'></div></div>`
         }
+
+        const inputPendidikanKosong = () => {
+            return `
+                <div class="d-flex" style="gap:5px;">
+                    <div class="form-group">
+                        <label for="nama-pendidikan">Jenis Pendidikan</label>
+                        <input type="text" class="form-control" name="nama_pendidikan[]" id="nama-pendidikan" placeholder="Enter here">
+                    </div>
+                    <div class="form-group">
+                        <label for="tipe-pendidikan">Tipe</label>
+                        <select class="form-control" id="tipe-pendidikan" name="tipe_pendidikan[]">
+                            <option value="formal" selected>Formal</option>
+                            <option value="non-formal">Non Formal</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label for="tempat-pendidikan">Sekolah</label>
+                        <input type="text" class="form-control" name="tempat_pendidikan[]" id="tempat-pendidikan" placeholder="Enter here">
+                    </div>
+                    <div class="form-group">
+                        <label for="waktu-pendidikan">Waktu Pendidikan</label>
+                        <input type="text" class="form-control" id="waktu-pendidikan" name="waktu_pendidikan[]" placeholder="Enter here">
+                    </div>
+                </div>
+            `
+        }
+
+        const inputPengalamanKosong = () => {
+            return `
+                <div class="form-group">
+                    <input type="text" class="form-control" name="pengalaman[]" id="pengalaman" placeholder="Enter here">
+                </div>
+            `
+        }
+
+        const inputKemampuanKosong = () => {
+            return `
+                <div class="d-flex" style="gap:5px;">
+                    <div class="form-group w-100">
+                        <label for="kategori-kemampuan">Kategori Kemampuan</label>
+                        <input type="text" class="form-control" name="kategori_kemampuan[]" id="kategori-kemampuan" placeholder="Enter here">
+                    </div>
+                    <div class="form-group w-100">
+                        <label for="sub-kategori-kemampuan">Sub-Kategori Kemampuan</label>
+                        <input type="text" class="form-control" name="sub_kategori_kemampuan[]" id="sub-kategori-kemampuan" placeholder="Enter here">
+                    </div>
+                </div>
+            `
+        }
+
         $(document).ready(function(){
+
             $('#btn-add-pengalaman').click(function(){
                 $('#wrap-pengalaman').append("<div class='form-group'><input type='text' class='form-control' name='pengalaman[]' id='pengalaman' placeholder='Enter here'></div>");
             })
+
             $('#btn-add-kemampuan').click(function(){
                 $('#wrap-kemampuan').append("<div class='d-flex' style='gap:5px;'><div class='form-group w-100'><label for='kategori-kemampuan'>Kategori Kemampuan</label><input type='text' class='form-control' name='kategori_kemampuan[]' id='kategori-kemampuan' placeholder='Enter here'></div><div class='form-group w-100'><label for='sub-kategori-kemampuan'>Sub-Kategori Kemampuan</label><input type='text' class='form-control' name='sub_kategori_kemampuan[]' id='sub-kategori-kemampuan' placeholder='Enter here'></div></div>");
             })
+
             $('#btn-add-pendidikan').click(function(){
-                $('#wrap-pendidikan').append("<div class='d-flex' style='gap:5px;'><div class='form-group'><label for='nama-pendidikan'>Jenis Pendidikan</label><input type='text' class='form-control' name='nama_pendidikan[]' id='nama-pendidikan' placeholder='Enter here'></div><div class='form-group'><label for='tipe-pendidikan'>Tipe</label><select class='form-control' id='tipe-pendidikan' name='tipe_pendidikan[]'>    <option value='formal' selected>Laki-laki</option>    <option value='non-formal'>Perempuan</option></select></div><div class='form-group'><label for='tempat-pendidikan'>Sekolah</label><input type='text' class='form-control' name='tempat_pendidikan[]' id='tempat-pendidikan' placeholder='Enter here'></div><div class='form-group'><label for='waktu-pendidikan'>Waktu Pendidikan</label><input type='text' class='form-control' id='waktu-pendidikan' name='waktu-pendidikan[]' placeholder='Enter here'></div></div>");
+                $('#wrap-pendidikan').append("<div class='d-flex' style='gap:5px;'><div class='form-group'><label for='nama-pendidikan'>Jenis Pendidikan</label><input type='text' class='form-control' name='nama_pendidikan[]' id='nama-pendidikan' placeholder='Enter here'></div><div class='form-group'><label for='tipe-pendidikan'>Tipe</label><select class='form-control' id='tipe-pendidikan' name='tipe_pendidikan[]'>    <option value='formal' selected>Formal</option>    <option value='non-formal'>Non Formal</option></select></div><div class='form-group'><label for='tempat-pendidikan'>Sekolah</label><input type='text' class='form-control' name='tempat_pendidikan[]' id='tempat-pendidikan' placeholder='Enter here'></div><div class='form-group'><label for='waktu-pendidikan'>Waktu Pendidikan</label><input type='text' class='form-control' id='waktu-pendidikan' name='waktu-pendidikan[]' placeholder='Enter here'></div></div>");
             })
+
+            $('#btnTambah').click(function(){
+                $(`#form [name='type_form']`).val('insert');
+                $('#form input[name=nama]').val(null);
+                $('#form input[name=tempat_lahir]').val(null);
+                $('#form input[name=tanggal_lahir]').val(null);
+                $('#form input[name=agama]').val(null);
+                $('#form input[name=no_hp]').val(null);
+                $('#form input[name=email]').val(null);
+                $('#form input[name=alamat]').text('');
+                $('#wrap-pendidikan').html(inputPendidikanKosong)
+                $('#wrap-kemampuan').html(inputKemampuanKosong)
+                $('#wrap-pengalaman').html(inputPengalamanKosong)
+            })
+
             $('.btn-edit').click(function(){
                 data = JSON.parse($(this).attr('data').split("'").join('"'));
                 dataArray = Object.entries(data);
                 $(`#form [name='type_form']`).val('edit');
+
+                console.log(dataArray)
 
                 for(index = 0; index < dataArray.length; index++) {
                     $(`#form [name=${dataArray[index][0]}]`).val(dataArray[index][1]);
@@ -271,6 +344,7 @@
                         break;
                     }
                 }
+
                 if(data.id_pendidikan) {
                     idPendidikanArray = data.id_pendidikan.split('[,]');
                     tipePendidikanArray = data.tipe_pendidikan.split('[,]');
@@ -294,6 +368,7 @@
                     }
                     $('#wrap-pendidikan').html(htmlPendidikan)
                 }
+
                 if(data.id_kemampuan) {
                     idKemampuanArray = data.id_kemampuan.split('[,]');
                     kategoriKemampuanArray = data.kategori_kemampuan.split('[,]');
